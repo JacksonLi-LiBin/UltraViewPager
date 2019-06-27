@@ -34,6 +34,8 @@ import android.os.Build;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.SparseIntArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -216,10 +218,12 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if (timer != null) {
             final int action = ev.getAction();
-            if (action == MotionEvent.ACTION_DOWN)
+            if (action == MotionEvent.ACTION_DOWN) {
                 stopTimer();
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL)
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                 startTimer();
+            }
         }
         return super.dispatchTouchEvent(ev);
     }
@@ -289,6 +293,11 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
 
     private TimerHandler.TimerHandlerListener mTimerHandlerListener = new TimerHandler.TimerHandlerListener() {
         @Override
+        public int getNextItem() {
+            return UltraViewPager.this.getNextItem();
+        }
+
+        @Override
         public void callBack() {
             scrollNextPage();
         }
@@ -296,12 +305,26 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
 
     @Override
     public void setAutoScroll(int intervalInMillis) {
-        if (0 == intervalInMillis)
+        if (0 == intervalInMillis) {
             return;
+        }
         if (timer != null) {
             disableAutoScroll();
         }
         timer = new TimerHandler(mTimerHandlerListener, intervalInMillis);
+        startTimer();
+    }
+
+    @Override
+    public void setAutoScroll(int intervalInMillis, SparseIntArray intervalArray) {
+        if (0 == intervalInMillis) {
+            return;
+        }
+        if (timer != null) {
+            disableAutoScroll();
+        }
+        timer = new TimerHandler(mTimerHandlerListener, intervalInMillis);
+        timer.specialInterval = intervalArray;
         startTimer();
     }
 
@@ -350,15 +373,33 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
     }
 
     @Override
-    public void scrollNextPage() {
+    public boolean scrollLastPage() {
+        boolean isChange = false;
+        if (viewPager != null && viewPager.getAdapter() != null && viewPager.getAdapter().getCount() > 0) {
+            final int curr = viewPager.getCurrentItemFake();
+            int lastPage = 0;
+            if (curr > 0) {
+                lastPage = curr - 1;
+                isChange = true;
+            }
+            viewPager.setCurrentItemFake(lastPage, true);
+        }
+        return isChange;
+    }
+
+    @Override
+    public boolean scrollNextPage() {
+        boolean isChange = false;
         if (viewPager != null && viewPager.getAdapter() != null && viewPager.getAdapter().getCount() > 0) {
             final int curr = viewPager.getCurrentItemFake();
             int nextPage = 0;
             if (curr < viewPager.getAdapter().getCount() - 1) {
                 nextPage = curr + 1;
+                isChange = true;
             }
             viewPager.setCurrentItemFake(nextPage, true);
         }
+        return isChange;
     }
 
     @Override
@@ -407,8 +448,20 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
         return viewPager.getAdapter() == null ? null : ((UltraViewPagerAdapter) viewPager.getAdapter()).getAdapter();
     }
 
+    public PagerAdapter getWrapAdapter() {
+        return viewPager.getAdapter();
+    }
+
+    public void refresh() {
+        if (viewPager.getAdapter() != null) {
+            viewPager.getAdapter().notifyDataSetChanged();
+        }
+    }
+
     public void setOnPageChangeListener(ViewPager.OnPageChangeListener listener) {
         if (pagerIndicator == null) {
+            //avoid registering the same listener twice
+            viewPager.removeOnPageChangeListener(listener);
             viewPager.addOnPageChangeListener(listener);
         } else {
             pagerIndicator.setPageChangeListener(listener);
@@ -425,6 +478,10 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
 
     public int getCurrentItem() {
         return viewPager.getCurrentItem();
+    }
+
+    public int getNextItem() {
+        return viewPager.getNextItem();
     }
 
     public void setPageTransformer(boolean reverseDrawingOrder, ViewPager.PageTransformer transformer) {
@@ -449,17 +506,19 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
     }
 
     private void startTimer() {
-        if (timer == null || !timer.isStopped)
+        if (timer == null || viewPager == null || !timer.isStopped) {
             return;
+        }
         timer.listener = mTimerHandlerListener;
         timer.removeCallbacksAndMessages(null);
-        timer.sendEmptyMessageDelayed(TimerHandler.MSG_TIMER_ID, timer.interval);
+        timer.tick(0);
         timer.isStopped = false;
     }
 
     private void stopTimer() {
-        if (timer == null || timer.isStopped)
+        if (timer == null || viewPager == null || timer.isStopped) {
             return;
+        }
         timer.removeCallbacksAndMessages(null);
         timer.listener = null;
         timer.isStopped = true;
@@ -472,4 +531,5 @@ public class UltraViewPager extends RelativeLayout implements IUltraViewPagerFea
             ((UltraViewPagerAdapter) viewPager.getAdapter()).setInfiniteRatio(infiniteRatio);
         }
     }
+
 }

@@ -42,8 +42,8 @@ import java.util.Map;
 /**
  * Created by mikeafc on 15/11/25.
  */
-class UltraViewPagerAdapter extends PagerAdapter {
-    interface UltraViewPagerCenterListener {
+public class UltraViewPagerAdapter extends PagerAdapter {
+    public interface UltraViewPagerCenterListener {
         void center();
 
         void resetPosition();
@@ -98,10 +98,9 @@ class UltraViewPagerAdapter extends PagerAdapter {
         if (item instanceof RecyclerView.ViewHolder)
             childView = ((RecyclerView.ViewHolder) item).itemView;
 
-        ViewPager viewPager = (ViewPager) container;
-        int childCount = viewPager.getChildCount();
+        int childCount = container.getChildCount();
         for (int i = 0; i < childCount; i++) {
-            View child = viewPager.getChildAt(i);
+            View child = container.getChildAt(i);
             if (isViewFromObject(child, item)) {
                 viewArray.put(realPosition, child);
                 break;
@@ -233,38 +232,37 @@ class UltraViewPagerAdapter extends PagerAdapter {
         return adapter.getCount();
     }
 
-    void setEnableLoop(boolean status) {
+    public void setEnableLoop(boolean status) {
         this.enableLoop = status;
         notifyDataSetChanged();
         if (!status) {
             centerListener.resetPosition();
         } else {
-            try {
-                centerListener.center();
-            } catch (Exception e) {
-
-            }
+            //try {
+            //    centerListener.center();
+            //} catch (Exception e) {
+            //
+            //}
         }
-
     }
 
-    boolean isEnableLoop() {
+    public boolean isEnableLoop() {
         return enableLoop;
     }
 
-    void setMultiScrRatio(float ratio) {
+    public void setMultiScrRatio(float ratio) {
         multiScrRatio = ratio;
     }
 
-    boolean isEnableMultiScr() {
+    public boolean isEnableMultiScr() {
         return !Float.isNaN(multiScrRatio) && multiScrRatio < 1f;
     }
 
-    void setCenterListener(UltraViewPagerCenterListener listener) {
+    public void setCenterListener(UltraViewPagerCenterListener listener) {
         centerListener = listener;
     }
 
-    void setInfiniteRatio(int infiniteRatio) {
+    public void setInfiniteRatio(int infiniteRatio) {
         this.infiniteRatio = infiniteRatio;
     }
 }

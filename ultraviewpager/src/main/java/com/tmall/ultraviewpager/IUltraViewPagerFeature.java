@@ -27,6 +27,7 @@
 package com.tmall.ultraviewpager;
 
 import android.graphics.Bitmap;
+import android.util.SparseIntArray;
 
 /**
  * Created by mikeafc on 15/11/30.
@@ -90,6 +91,13 @@ interface IUltraViewPagerFeature {
     void setAutoScroll(int intervalInMillis);
 
     /**
+     * Enable auto-scroll mode with special interval times
+     * @param intervalInMillis The default time to scroll
+     * @param intervalArray The special interval to scroll, in responding to each frame
+     */
+    void setAutoScroll(int intervalInMillis, SparseIntArray intervalArray);
+
+    /**
      * Disable auto-scroll mode
      */
     void disableAutoScroll();
@@ -137,9 +145,14 @@ interface IUltraViewPagerFeature {
     void disableScrollDirection(UltraViewPager.ScrollDirection direction);
 
     /**
+     * Scroll to the last page, and return to the first page when the last page is reached.
+     */
+    boolean scrollLastPage();
+
+    /**
      * Scroll to the next page, and return to the first page when the last page is reached.
      */
-    void scrollNextPage();
+    boolean scrollNextPage();
 
     /**
      * Set multi-screen mode , the aspect ratio of PageViewer should less than or equal to 1.0f

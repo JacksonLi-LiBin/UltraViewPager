@@ -26,17 +26,16 @@
 
 package com.tmall.ultraviewpager;
 
-import com.tmall.ultraviewpager.transformer.UltraVerticalTransformer;
-
 import android.content.Context;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.tmall.ultraviewpager.transformer.UltraVerticalTransformer;
 
 /**
  * Created by mikeafc on 15/11/25.
@@ -85,7 +84,9 @@ public class UltraViewPagerView extends ViewPager implements UltraViewPagerAdapt
     }
 
     protected void onMeasurePage(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.d("TEST","onMeasurePage"+getCurrentItem());
+        if (pagerAdapter == null) {
+            return;
+        }
         View child = pagerAdapter.getViewAtPosition(getCurrentItem());
         if (child == null) {
             child = getChildAt(0);
@@ -190,13 +191,15 @@ public class UltraViewPagerView extends ViewPager implements UltraViewPagerAdapt
     @Override
     public void setAdapter(PagerAdapter adapter) {
         if (adapter != null) {
-            pagerAdapter = new UltraViewPagerAdapter(adapter);
-            pagerAdapter.setCenterListener(this);
-            pagerAdapter.setEnableLoop(enableLoop);
-            pagerAdapter.setMultiScrRatio(multiScrRatio);
-            needsMeasurePage = true;
-            constrainLength = 0;
-            super.setAdapter(pagerAdapter);
+            if (pagerAdapter == null || pagerAdapter.getAdapter() != adapter) {
+                pagerAdapter = new UltraViewPagerAdapter(adapter);
+                pagerAdapter.setCenterListener(this);
+                pagerAdapter.setEnableLoop(enableLoop);
+                pagerAdapter.setMultiScrRatio(multiScrRatio);
+                needsMeasurePage = true;
+                constrainLength = 0;
+                super.setAdapter(pagerAdapter);
+            }
         } else {
             super.setAdapter(adapter);
         }
@@ -217,28 +220,35 @@ public class UltraViewPagerView extends ViewPager implements UltraViewPagerAdapt
 
     @Override
     public int getCurrentItem() {
-        if (pagerAdapter.getCount() != 0) {
+        if (pagerAdapter != null && pagerAdapter.getCount() != 0) {
             int position = super.getCurrentItem();
             return position % pagerAdapter.getRealCount();
         }
         return super.getCurrentItem();
     }
 
+    public int getNextItem() {
+        if (pagerAdapter.getCount() != 0) {
+            int next = super.getCurrentItem() + 1;
+            return next % pagerAdapter.getRealCount();
+        }
+        return 0;
+    }
 
     /**
      * Set the currently selected page.
      *
-     * @param item Item index to select
+     * @param item         Item index to select
      * @param smoothScroll True to smoothly scroll to the new item, false to transition immediately
      */
-    void setCurrentItemFake(int item, boolean smoothScroll) {
+    public void setCurrentItemFake(int item, boolean smoothScroll) {
         super.setCurrentItem(item, smoothScroll);
     }
 
     /**
      * Get the currently selected page.
      */
-    int getCurrentItemFake() {
+    public int getCurrentItemFake() {
         return super.getCurrentItem();
     }
 
@@ -249,18 +259,11 @@ public class UltraViewPagerView extends ViewPager implements UltraViewPagerAdapt
             needsMeasurePage = true;
         }
         float pageMargin = (1 - ratio) * getResources().getDisplayMetrics().widthPixels;
-        if(scrollMode == UltraViewPager.ScrollMode.VERTICAL){
-            setPageMargin((int) (pageMargin));
-        }else{
-            setPageMargin((int) (-(pageMargin + convertDp2Px(getContext(), 1f))));
+        if (scrollMode == UltraViewPager.ScrollMode.VERTICAL) {
+            setPageMargin((int) pageMargin);
+        } else {
+            setPageMargin((int) -pageMargin);
         }
-
-
-
-    }
-
-    private int convertDp2Px(Context context, float dp) {
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
     }
 
     public void setEnableLoop(boolean status) {
